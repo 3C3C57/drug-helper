@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>医生用药速查助手</title>
+    <meta name="description" content="专业的药品信息查询助手，输入药品名称，快速查询说明书和临床指南">
+    <meta name="keywords" content="药品查询,用药助手,药品说明书,临床指南">
+    
+    <!-- 微信分享优化 -->
+    <meta property="og:title" content="医生用药速查助手">
+    <meta property="og:description" content="输入药品名称，秒查说明书和临床指南">
+    <meta property="og:type" content="website">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* 顶部分享栏 */
+        .share-bar {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .share-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .share-btn:active {
+            transform: translateY(0);
+        }
+        
+        .share-tip {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .example-queries {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .example-query {
+            padding: 6px 14px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .example-query:hover,
+        .example-query:active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .chat-container {
+            padding: 15px;
+            min-height: 400px;
+            max-height: 50vh;
+            overflow-y: auto;
+            background: #f8f9fa;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            text-align: right;
+        }
+        
+        .message.assistant {
+            text-align: left;
+        }
+        
+        .message-content {
+            display: inline-block;
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 480px) {
+            .message-content {
+                max-width: 90%;
+                font-size: 13px;
+            }
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-content h1, 
+        .message-content h2, 
+        .message-content h3 {
+            margin-top: 12px;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+        
+        .message-content h1 {
+            font-size: 18px;
+        }
+        
+        .message-content h2 {
+            font-size: 16px;
+        }
+        
+        .message-content h3 {
+            font-size: 14px;
+        }
+        
+        .message-content ul, 
+        .message-content ol {
+            margin: 8px 0;
+            padding-left: 18px;
+        }
+        
+        .message-content li {
+            margin: 4px 0;
+        }
+        
+        .message-content strong {
+            color: #764ba2;
+            font-weight: 600;
+        }
+        
+        .message-content code {
+            background: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 8px;
+        }
+        
+        #userInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+            -webkit-appearance: none;
+        }
+        
+        #userInput:focus {
+            border-color: #667eea;
+        }
+        
+        #sendBtn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        
+        #sendBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        #sendBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+        
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: none;
+            font-size: 14px;
+            max-width: 80%;
+            text-align: center;
+        }
+        
+        .toast.show {
+            display: block;
+            animation: toastFadeIn 0.3s ease-in;
+        }
+        
+        @keyframes toastFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 分享按钮栏 -->
+        <div class="share-bar">
+            <button class="share-btn" onclick="copyLink()">
+                📋 复制链接分享给朋友
+            </button>
+            <p class="share-tip">或直接在微信中分享本页面</p>
+        </div>
+        
+        <div class="header">
+            <h1>💊 医生用药速查助手</h1>
+            <p>输入药品名称（通用名或商品名），快速查询说明书和临床指南</p>
+        </div>
+        
+        <div class="example-queries">
+            <span class="example-query" onclick="setQuery('阿司匹林')">阿司匹林</span>
+            <span class="example-query" onclick="setQuery('阿托伐他汀钙')">阿托伐他汀钙</span>
+            <span class="example-query" onclick="setQuery('布洛芬')">布洛芬</span>
+            <span class="example-query" onclick="setQuery('奥美拉唑')">奥美拉唑</span>
+            <span class="example-query" onclick="setQuery('头孢拉定')">头孢拉定</span>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message assistant">
+                <div class="message-content">
+                    <p>👋 你好！我是医生用药速查助手。</p>
+                    <p>你可以输入药品名称（如：阿司匹林、阿托伐他汀钙等），我会帮你查询该药品的详细说明书信息和临床指南说明。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="输入药品名称（如：阿司匹林）..." 
+                    onkeypress="if(event.key === 'Enter') sendMessage()"
+                    autocomplete="off"
+                >
+                <button id="sendBtn" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast"></div>
+    <script>
+        // ========== 配置区域 ==========
+        
+        // 🔴 重要：部署到 Vercel 后，请修改这里的地址为你的 ngrok 地址
+        // 例如：const API_BASE_URL = 'https://xxxx.ngrok-free.app';
+        // 当前是本地测试地址，仅用于同网络测试
+        const API_BASE_URL = 'http://9.128.234.135:5000';
+        
+        // ================================
+        
+        let sessionId = 'session_' + Date.now();
+        
+        function setQuery(text) {
+            document.getElementById('userInput').value = text;
+            document.getElementById('userInput').focus();
+        }
+        
+        function addMessage(content, isUser) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'assistant');
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function addTypingIndicator() {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.id = 'typingIndicator';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
+        function copyLink() {
+            const url = window.location.href;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('✅ 链接已复制！\n\n可以在微信中粘贴分享给朋友');
+                }).catch(err => {
+                    fallbackCopy(url);
+                });
+            } else {
+                fallbackCopy(url);
+            }
+        }
+        
+        function fallbackCopy(url) {
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast('✅ 链接已复制！\n\n可以在微信中粘贴分享给朋友');
+            } catch (err) {
+                prompt('请手动复制下面的链接：', url);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, true);
+            input.value = '';
+            sendBtn.disabled = true;
+            
+            // 显示输入指示器
+            addTypingIndicator();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/stream_run`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        query: message,
+                        stream: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                
+                const data = await response.json();
+                removeTypingIndicator();
+                
+                // 显示 AI 回复
+                if (data.content) {
+                    addMessage(data.content, false);
+                } else {
+                    addMessage('抱歉，我遇到了一些问题，请稍后重试。', false);
+                }
+                
+            } catch (error) {
+                removeTypingIndicator();
+                console.error('Error:', error);
+                
+                let errorMsg = '连接服务器失败，请稍后重试。';
+                
+                // 检查是否是跨域问题
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg = '连接服务器失败。\n\n💡 提示：\n1. 检查网络连接\n2. 如果使用本地地址，请确保在同一网络\n3. 或联系分享者获取正确的访问地址';
+                }
+                
+                addMessage(errorMsg, false);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+        
+        // 页面加载时初始化
+        window.onload = function() {
+            console.log('🎉 医生用药速查助手已启动');
+            console.log('📍 API 地址:', API_BASE_URL);
+            console.log('🔗 当前页面:', window.location.href);
+            
+            // 微信分享优化（如果是在微信中）
+            if (typeof wx !== 'undefined') {
+                try {
+                    wx.updateAppMessageShareData({
+                        title: '医生用药速查助手',
+                        desc: '输入药品名称，秒查说明书和临床指南',
+                        link: window.location.href,
+                        success: function() {
+                            console.log('✅ 微信分享配置成功');
+                        }
+                    });
+                } catch (e) {
+                    console.log('微信分享配置失败（非微信环境）');
+                }
+            }
+            
+            // 自动聚焦输入框
+            setTimeout(() => {
+                const input = document.getElementById('userInput');
+                if (input) {
+                    input.focus();
+                }
+            }, 500);
+        };
+        
+        // 处理页面可见性变化
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // 页面重新可见时，聚焦输入框
+                setTimeout(() => {
+                    const input = document.getElementById('userInput');
+                    if (input) {
+                        input.focus();
+                    }
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>
